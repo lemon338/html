@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+  <meta charset="UTF-8">
+  <title>计算器</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .output { margin-top: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+
+  <h2>计算器</h2>
+  <p>请输入要计算的数字</p>
+  <input type="text" id="math" placeholder="请输入"><br><br>
+
+  <button onclick="add()">加法</button>
+  <button onclick="substraction()">减法</button>
+  <button onclick="multiplication()">乘法</button>
+  <button onclick="division()">除法</button>
+
+  <div class="output" id="output"></div>
+
+  <script src="2.js"></script> <!-- ✅ 注意是 src，不是 scr -->
+  
+</body>
+</html>
