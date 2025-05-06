@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+  <meta charset="UTF-8">
+  <title>井字棋游戏</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: lightgray;
+      cursor: pointer;
+    }
+    button {
+      font-size: 20px;
+      padding: 10px;
+      margin-top: 20px;
+    }
+    .output {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>井字棋游戏</h1>
+  <p>请选择你的棋子：<button onclick="setPlayer('X')">X</button><button onclick="setPlayer('O')">O</button></p>
+  <div class="board" id="board"></div>
+  <button onclick="resetGame()">重置游戏</button>
+  <div class="output" id="output">当前操作：</div>
+
+  <script>
+    let board = Array(9).fill(' '); // 棋盘数组
+    let player = ''; // 玩家棋子
+    let computer = ''; // 电脑棋子
+    let currentTurn = ''; // 当前轮到谁
+    let gameOver = false; // 游戏是否结束
+
+    // 设置玩家和电脑的棋子
+    function setPlayer(selectedPlayer) {
+      player = selectedPlayer;
+      computer = (selectedPlayer === 'X') ? 'O' : 'X';
+      currentTurn = Math.random() < 0.5 ? '电脑' : '玩家';
+      updateOutput();
+      renderBoard();
+    }
+
+    // 更新输出信息
+    function updateOutput() {
+      if (gameOver) {
+        document.getElementById("output").textContent = "游戏结束！";
+      } else {
+        document.getElementById("output").textContent = "当前轮到: " + currentTurn;
+      }
+    }
+
+    // 渲染棋盘
+    function renderBoard() {
+      const boardElement = document.getElementById('board');
+      boardElement.innerHTML = '';
+      board.forEach((cell, index) => {
+        const cellElement = document.createElement('div');
+        cellElement.className = 'cell';
+        cellElement.textContent = cell;
+        cellElement.onclick = () => playerMove(index);
+        boardElement.appendChild(cellElement);
+      });
+    }
+
+    // 玩家移动
+    function playerMove(index) {
+      if (gameOver || board[index] !== ' ' || currentTurn !== '玩家') return;
+      board[index] = player;
+      renderBoard();
+      if (checkWinner(player)) {
+        setTimeout(() => alert('你赢了！'), 100);
+        gameOver = true;
+        return;
+      }
+      if (isBoardFull()) {
+        setTimeout(() => alert('平局！'), 100);
+        gameOver = true;
+        return;
+      }
+      currentTurn = '电脑';
+      setTimeout(computerMove, 500);  // 延迟模拟电脑思考
+    }
+
+    // 电脑移动
+    function computerMove() {
+      if (gameOver || currentTurn !== '电脑') return;
+      let move = getBestMove();
+      board[move] = computer;
+      renderBoard();
+      if (checkWinner(computer)) {
+        setTimeout(() => alert('电脑赢了！'), 100);
+        gameOver = true;
+        return;
+      }
+      if (isBoardFull()) {
+        setTimeout(() => alert('平局！'), 100);
+        gameOver = true;
+        return;
+      }
+      currentTurn = '玩家';
+      updateOutput();
+    }
+
+    // 获取电脑的最佳移动
+    function getBestMove() {
+      // 电脑简单的随机选择一个空位
+      let availableMoves = board.map((cell, index) => cell === ' ' ? index : null).filter(index => index !== null);
+      return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    }
+
+    // 检查某个玩家是否获胜
+    function checkWinner(player) {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  // 横向
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  // 纵向
+        [0, 4, 8], [2, 4, 6]               // 对角线
+      ];
+      return winPatterns.some(pattern => 
+        pattern.every(index => board[index] === player)
+      );
+    }
+
+    // 判断棋盘是否已满
+    function isBoardFull() {
+      return !board.includes(' ');
+    }
+
+    // 重置游戏
+    function resetGame() {
+      board = Array(9).fill(' ');
+      gameOver = false;
+      currentTurn = Math.random() < 0.5 ? '电脑' : '玩家';
+      updateOutput();
+      renderBoard();
+    }
+
+  </script>
+</body>
+</html>
