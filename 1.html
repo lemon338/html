@@ -1,160 +1,192 @@
 <!DOCTYPE html>
-<html lang="cn">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <title>井字棋游戏</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
-    .board {
+    #board {
       display: grid;
-      grid-template-columns: repeat(3, 100px);
-      grid-template-rows: repeat(3, 100px);
+      grid-template-columns: repeat(3, 60px);
       gap: 5px;
-      justify-content: center;
-    }
-    .cell {
-      width: 100px;
-      height: 100px;
-      font-size: 24px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: lightgray;
-      cursor: pointer;
+      margin: 20px auto;
+      width: max-content;
     }
     button {
-      font-size: 20px;
-      padding: 10px;
-      margin-top: 20px;
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
     }
-    .output {
-      margin-top: 20px;
-      font-size: 20px;
+    #status {
+      text-align: center;
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
-
-  <h1>井字棋游戏</h1>
-  <p>请选择你的棋子：<button onclick="setPlayer('X')">X</button><button onclick="setPlayer('O')">O</button></p>
-  <div class="board" id="board"></div>
-  <button onclick="resetGame()">重置游戏</button>
-  <div class="output" id="output">当前操作：</div>
+  <h1 style="text-align:center;">井字棋游戏</h1>
+  <div id="status">请选择你的棋子：</div>
+  <div style="text-align:center;"id='choose'>
+    <button onclick="choose('X')">X</button>
+    <button onclick="choose('O')">O</button>
+  </div>
+  <div id="board"></div>
+  <div style="text-align:center;">
+    <button onclick="resetGame()" style="text-align: center;">重置</button>
+  </div>
 
   <script>
-    let board = Array(9).fill(' '); // 棋盘数组
-    let player = ''; // 玩家棋子
-    let computer = ''; // 电脑棋子
-    let currentTurn = ''; // 当前轮到谁
-    let gameOver = false; // 游戏是否结束
+    const boardElement = document.getElementById('board');
+    const statusElement = document.getElementById('status');
+    let board = Array(9).fill('');
+    let buttons = [];
+    let player = '';
+    let computer = '';
+    let currentPlayer = '';
+    
 
-    // 设置玩家和电脑的棋子
-    function setPlayer(selectedPlayer) {
-      player = selectedPlayer;
-      computer = (selectedPlayer === 'X') ? 'O' : 'X';
-      currentTurn = Math.random() < 0.5 ? '电脑' : '玩家';
-      updateOutput();
-      renderBoard();
+    function makeMove(index, symbol) {
+      board[index] = symbol;
+      buttons[index].textContent = symbol;
+    }
+    
+    function chooseFrom(list) {
+      const available = list.filter(i => !board[i]);
+      if (available.length === 0) return null;
+      return available[Math.floor(Math.random() * available.length)];
+    }
+    
+
+    function choose(choice) {
+      a=document.getElementById('choose');
+      
+      a.style.display='none'
+
+      player = choice;
+      computer = choice === 'X' ? 'O' : 'X';
+      statusElement.textContent = `你是 ${player}，游戏开始`;
+      createBoard();
+      currentPlayer = Math.random() < 0.5 ? 'player' : 'computer';
+      if (currentPlayer === 'computer') setTimeout(computerMove, 500);
     }
 
-    // 更新输出信息
-    function updateOutput() {
-      if (gameOver) {
-        document.getElementById("output").textContent = "游戏结束！";
-      } else {
-        document.getElementById("output").textContent = "当前轮到: " + currentTurn;
-      }
-    }
-
-    // 渲染棋盘
-    function renderBoard() {
-      const boardElement = document.getElementById('board');
+    function createBoard() {
       boardElement.innerHTML = '';
-      board.forEach((cell, index) => {
-        const cellElement = document.createElement('div');
-        cellElement.className = 'cell';
-        cellElement.textContent = cell;
-        cellElement.onclick = () => playerMove(index);
-        boardElement.appendChild(cellElement);
-      });
+      buttons = [];
+      for (let i = 0; i < 9; i++) {
+        const btn = document.createElement('button');
+        btn.addEventListener('click', () => playerMove(i));
+        boardElement.appendChild(btn);
+        buttons.push(btn);
+      }
     }
 
-    // 玩家移动
     function playerMove(index) {
-      if (gameOver || board[index] !== ' ' || currentTurn !== '玩家') return;
+      if (currentPlayer !== 'player' || board[index]) return;
       board[index] = player;
-      renderBoard();
-      if (checkWinner(player)) {
-        setTimeout(() => alert('你赢了！'), 100);
-        gameOver = true;
+      buttons[index].textContent = player;
+      if (checkWin(player)) {
+        statusElement.textContent = "你赢了！";
+        disableAll();
         return;
       }
-      if (isBoardFull()) {
-        setTimeout(() => alert('平局！'), 100);
-        gameOver = true;
+      if (boardFull()) {
+        statusElement.textContent = "平局！";
         return;
       }
-      currentTurn = '电脑';
-      setTimeout(computerMove, 500);  // 延迟模拟电脑思考
+      currentPlayer = 'computer';
+      setTimeout(computerMove, 500);
     }
 
-    // 电脑移动
     function computerMove() {
-      if (gameOver || currentTurn !== '电脑') return;
-      let move = getBestMove();
-      board[move] = computer;
-      renderBoard();
-      if (checkWinner(computer)) {
-        setTimeout(() => alert('电脑赢了！'), 100);
-        gameOver = true;
+      // 1. 自己能赢就赢
+      let move = findBestMove(computer);
+      if (move !== null) {
+        makeMove(move, computer);
+        statusElement.textContent = "电脑赢了！";
+        disableAll();
         return;
       }
-      if (isBoardFull()) {
-        setTimeout(() => alert('平局！'), 100);
-        gameOver = true;
+    
+      // 2. 玩家能赢就拦
+      move = findBestMove(player);
+      if (move !== null) {
+        makeMove(move, computer);
+        currentPlayer = 'player';
         return;
       }
-      currentTurn = '玩家';
-      updateOutput();
+    
+      // 3. 优先角落
+      move = chooseFrom([0, 2, 6, 8]);
+      if (move === null) {
+        // 4. 然后中心
+        if (!board[4]) {
+          move = 4;
+        } else {
+          // 5. 然后边上
+          move = chooseFrom([1, 3, 5, 7]);
+        }
+      }
+    
+      if (move !== null) {
+        makeMove(move, computer);
+        if (checkWin(computer)) {
+          statusElement.textContent = "电脑赢了！";
+          disableAll();
+        } else if (boardFull()) {
+          statusElement.textContent = "平局！";
+        } else {
+          currentPlayer = 'player';
+        }
+      }
+    }
+    
+
+    function findBestMove(symbol) {
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = symbol;
+          if (checkWin(symbol)) {
+            board[i] = '';
+            return i;
+          }
+          board[i] = '';
+        }
+      }
+      return null;
     }
 
-    // 获取电脑的最佳移动
-    function getBestMove() {
-      // 电脑简单的随机选择一个空位
-      let availableMoves = board.map((cell, index) => cell === ' ' ? index : null).filter(index => index !== null);
-      return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    function randomMove() {
+      const empty = board.map((v, i) => v ? null : i).filter(v => v !== null);
+      return empty.length ? empty[Math.floor(Math.random() * empty.length)] : null;
     }
 
-    // 检查某个玩家是否获胜
-    function checkWinner(player) {
-      const winPatterns = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],  // 横向
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],  // 纵向
-        [0, 4, 8], [2, 4, 6]               // 对角线
+    function checkWin(symbol) {
+      const wins = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
       ];
-      return winPatterns.some(pattern => 
-        pattern.every(index => board[index] === player)
-      );
+      return wins.some(([a,b,c]) => board[a] === symbol && board[b] === symbol && board[c] === symbol);
     }
 
-    // 判断棋盘是否已满
-    function isBoardFull() {
-      return !board.includes(' ');
+    function boardFull() {
+      return board.every(cell => cell);
     }
 
-    // 重置游戏
+    function disableAll() {
+      buttons.forEach(btn => btn.disabled = true);
+    }
+
     function resetGame() {
-      board = Array(9).fill(' ');
-      gameOver = false;
-      currentTurn = Math.random() < 0.5 ? '电脑' : '玩家';
-      updateOutput();
-      renderBoard();
-    }
+      a=document.getElementById('choose');
+      a.style.display='inline-block';
+      a.style.margin = '20px auto'; // 重新加居中样式
+      location.reload();
 
+      board = Array(9).fill('');
+      statusElement.textContent = "请选择你的棋子：";
+      boardElement.innerHTML = '';
+    }
   </script>
 </body>
 </html>
